@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `court` ADD COLUMN `hasLights` BOOLEAN NOT NULL DEFAULT false,
+    ADD COLUMN `isFree` BOOLEAN NOT NULL DEFAULT true;

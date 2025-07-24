@@ -1,0 +1,386 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  Int                  @id @default(autoincrement())
+  username            String               @unique
+  email               String               @unique
+  password            String?
+  skillLevel          String?
+  position            String?
+  isPremium           Boolean              @default(false)
+  premiumUntil        DateTime?
+  premiumTransactions PremiumTransaction[]
+  createdAt           DateTime             @default(now())
+  achievements        Achievement[]
+  location            Location?
+
+  profile         Profile?
+  challenges      Challenge[]
+  ratingsGiven    Rating[]    @relation("UserGivenRatings")
+  ratingsReceived Rating[]    @relation("UserReceivedRatings")
+  gamesOrganized  Game[]      @relation("organizedGames")
+
+  teamMemberships TeamMember[]
+  participations  GameParticipant[]
+
+  createdTeam        Team?        @relation("CreatedTeam")
+  teams              Team[]       @relation("TeamMembers")
+  teamsAsPlayer      Team[]       @relation("PlayerTeams")
+  teamRatings        TeamRating[]
+  tournaments        Tournament[] @relation("TournamentParticipants")
+  // ✅ NEU: Relation zu den erstellten Turnieren
+  createdTournaments Tournament[] @relation("TournamentCreator") // Ersteller
+  stats              PlayerStat[] // 👈 Gegenfeld für Relation
+
+  conversations Conversation[] @relation("ConversationParticipants")
+  sentMessages  Message[]      @relation("SentMessages")
+
+  friends  Friendship[] @relation("FriendList")
+  friendOf Friendship[] @relation("FriendOf")
+
+  readByUsers  MessageRead[]
+  checkins     Checkin[]
+  activities   Activity[]    @relation("UserActivities")
+  settings     Settings?
+  courtRatings CourtRating[]
+
+  @@map("users")
+}
+
+model Location {
+  id        Int    @id @default(autoincrement())
+  city      String
+  latitude  Float
+  longitude Float
+  userId    Int    @unique
+  user      User   @relation(fields: [userId], references: [id])
+}
+
+model Achievement {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  icon        String? // z.B. Emoji oder Icon-Name
+  achieved    Boolean @default(false)
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id])
+}
+
+model Profile {
+  id       Int     @id @default(autoincrement())
+  bio      String?
+  imageUrl String?
+  name     String?
+  height   Int?
+  phone    String?
+  userId   Int     @unique(map: "Profile_userId_key")
+  user     User    @relation(fields: [userId], references: [id], map: "Profile_userId_fkey")
+}
+
+model Challenge {
+  id        Int      @id @default(autoincrement())
+  title     String
+  details   String
+  reward    String?
+  createdAt DateTime @default(now())
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], map: "Challenge_userId_fkey")
+
+  @@index([userId], map: "Challenge_userId_fkey")
+}
+
+model Court {
+  id            Int           @id @default(autoincrement())
+  name          String        @unique
+  address       String
+  city          String
+  latitude      Float? // 🆕 Geokoordinaten
+  longitude     Float? // 🆕
+  isIndoor      Boolean       @default(false)
+  hasLights     Boolean       @default(false)
+  isFree        Boolean       @default(true)
+  description   String? // 🆕 Optional
+  amenities     String? // 🆕 Array von z. B. "Toilette", "Wasser", "Korbnetz"
+  averageRating Float         @default(0) // 🆕 Durchschnittliche Bewertung
+  checkinCount  Int           @default(0) // 🆕 Check-in-Zähler
+  image         String?
+  checkins      Checkin[]
+  games         Game[]
+  courtRatings  CourtRating[]
+  reviews       Review[]
+}
+
+model Game {
+  id           Int               @id @default(autoincrement())
+  title        String
+  participants GameParticipant[]
+  date         DateTime
+  time         String?
+  location     String?
+  score        Json? // z. B. "15:11"
+  result       String?
+  maxPlayers   Int
+  skillLevel   String
+  description  String?
+  isPublic     Boolean           @default(true)
+
+  courtId Int
+  court   Court @relation(fields: [courtId], references: [id])
+
+  organizerId Int
+  organizer   User @relation("organizedGames", fields: [organizerId], references: [id])
+
+  teamAId Int?
+  teamBId Int?
+  teamA   Team? @relation("teamA_games", fields: [teamAId], references: [id])
+  teamB   Team? @relation("teamB_games", fields: [teamBId], references: [id])
+
+  stats      PlayerStat[] // 👈 Gegenfeld für Relation
+  activities Activity[]   @relation("GameActivities")
+
+  @@index([courtId])
+  @@index([organizerId])
+  @@index([teamAId])
+  @@index([teamBId])
+}
+
+model PlayerStat {
+  id       Int  @id @default(autoincrement())
+  gameId   Int
+  playerId Int
+  points   Int?
+  rebounds Int?
+  player   User @relation(fields: [playerId], references: [id])
+  game     Game @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, playerId])
+}
+
+model Rating {
+  id        Int      @id @default(autoincrement())
+  raterId   Int
+  ratedId   Int
+  score     Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  rater User @relation("UserGivenRatings", fields: [raterId], references: [id])
+  rated User @relation("UserReceivedRatings", fields: [ratedId], references: [id])
+
+  @@index([raterId])
+  @@index([ratedId])
+}
+
+model TeamRating {
+  userId Int
+  teamId Int
+
+  user User @relation(fields: [userId], references: [id])
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([userId, teamId]) // Composite Key → verhindert doppelte Bewertungen
+}
+
+model Team {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  location  String
+  logo      String?
+  rating    Int      @default(0)
+  createdAt DateTime @default(now())
+
+  creatorId Int?  @unique
+  creator   User? @relation("CreatedTeam", fields: [creatorId], references: [id], map: "fk_created_team_user")
+
+  users   User[]       @relation("TeamMembers")
+  players User[]       @relation("PlayerTeams")
+  members TeamMember[]
+
+  teamA_games  Game[]            @relation("teamA_games")
+  teamB_games  Game[]            @relation("teamB_games")
+  tournaments  Tournament[]      @relation("team_tournaments")
+  ratings      TeamRating[]
+  participants GameParticipant[]
+
+  activities Activity[] @relation("TeamActivities")
+}
+
+model TeamMember {
+  id     Int    @id @default(autoincrement())
+  userId Int
+  teamId Int
+  role   String
+
+  user User @relation(fields: [userId], references: [id])
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([teamId])
+}
+
+model Tournament {
+  id              Int      @id @default(autoincrement())
+  title           String
+  organizer       String
+  date            DateTime
+  format          String
+  location        String
+  entryFee        String?
+  prizes          String?
+  maxParticipants Int?
+  participants    User[]   @relation("TournamentParticipants")
+  // Neue Beziehung zum Ersteller:
+  creator         User?    @relation("TournamentCreator", fields: [creatorId], references: [id])
+  creatorId       Int?
+
+  teams Team[] @relation("team_tournaments")
+}
+
+model GameParticipant {
+  id     Int  @id @default(autoincrement())
+  game   Game @relation(fields: [gameId], references: [id])
+  gameId Int
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+
+  teamId Int? // 🔄 Neu: echte ID statt String
+  team   Team? @relation(fields: [teamId], references: [id])
+
+  @@unique([gameId, userId])
+}
+
+model Conversation {
+  id           Int       @id @default(autoincrement())
+  participants User[]    @relation("ConversationParticipants")
+  messages     Message[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Message {
+  id             Int          @id @default(autoincrement())
+  text           String
+  timestamp      DateTime     @default(now())
+  read           Boolean      @default(false) // kannst du evtl. entfernen, wenn du `MessageRead` nutzt
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
+  senderId       Int
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversationId Int
+
+  readByUsers MessageRead[] // neue Relation
+}
+
+model MessageRead {
+  id        Int      @id @default(autoincrement())
+  message   Message  @relation(fields: [messageId], references: [id])
+  messageId Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  readAt    DateTime @default(now())
+
+  @@unique([userId, messageId])
+}
+
+model Friendship {
+  id          Int      @id @default(autoincrement())
+  requester   User     @relation("FriendList", fields: [requesterId], references: [id])
+  requesterId Int
+  addressee   User     @relation("FriendOf", fields: [addresseeId], references: [id])
+  addresseeId Int
+  status      String // 'pending' | 'accepted'
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, addresseeId])
+}
+
+model PremiumTransaction {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  tier       String // "monthly" | "yearly" | "lifetime"
+  price      Float
+  fullName   String
+  email      String
+  address    String
+  city       String
+  country    String
+  zipCode    String
+  expiryDate DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Checkin {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  court     Court    @relation(fields: [courtId], references: [id])
+  courtId   Int
+  createdAt DateTime @default(now())
+}
+
+model Activity {
+  id   Int    @id @default(autoincrement())
+  type String // z.B. "join_game", "create_team", etc.
+
+  userId Int
+  user   User @relation("UserActivities", fields: [userId], references: [id])
+
+  gameId Int?
+  game   Game? @relation("GameActivities", fields: [gameId], references: [id])
+
+  teamId Int?
+  team   Team? @relation("TeamActivities", fields: [teamId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  notifications Json?
+  privacy       Json?
+  appearance    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  court     Court    @relation(fields: [courtId], references: [id])
+  courtId   Int
+}
+
+model CourtRating {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  courtId   Int
+  rating    Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  court Court @relation(fields: [courtId], references: [id])
+
+  @@unique([userId, courtId]) // Jeder User kann nur einmal pro Court bewerten
+}
+
+
+model NewsletterSubscriber {
+  id    Int    @id @default(autoincrement())
+  email String @unique
+  subscribedAt DateTime @default(now())
+}
