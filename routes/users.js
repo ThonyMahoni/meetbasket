@@ -1,8 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
 
 // GET /api/users – Alle Nutzer abrufen
 router.get('/', async (req, res) => {
