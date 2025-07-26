@@ -85,7 +85,7 @@ const Home = () => {
     setLoading(true);
     try {
       // Spiele laden
-      const gameRes = await fetch(`${API_BASE_URL}/api/games`);
+      const gameRes = await fetch(`${API_BASE_URL}/api/games/basic`);
       if (!gameRes.ok) throw new Error('Spiele konnten nicht geladen werden');
       const gameJson = await gameRes.json();
       const allGames = Array.isArray(gameJson) ? gameJson : gameJson.games;
@@ -171,7 +171,7 @@ const activityRes = await fetch(activityUrl);
     try {
       if (!user || !user.id) throw new Error('Benutzer nicht eingeloggt');
 
-      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/join`, {
+      const res = await fetch(`${API_BASE_URL}/api/games/basic/${gameId}/join`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
@@ -196,7 +196,7 @@ const activityRes = await fetch(activityUrl);
     try {
       if (!user || !user.id) throw new Error('Benutzer nicht eingeloggt');
 
-      const res = await fetch(`${API_BASE_URL}/api/games/${gameId}/leave`, {
+      const res = await fetch(`${API_BASE_URL}/api/games/basic/${gameId}/leave`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id }),
