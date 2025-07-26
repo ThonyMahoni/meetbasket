@@ -1,10 +1,10 @@
 // Nur zuständig für Ratings, obwohl der Dateiname verwirrt!
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
 
 // POST: Rating erstellen oder updaten
 router.post('/', async (req, res) => {
