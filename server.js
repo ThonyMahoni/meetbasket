@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // API-Routen einhängen
 app.use('/api/games', gamesRoutes); // reicht völlig
 app.use('/api/courts', courtsRoutes);
-//app.use('/api', authRoutes);
+app.use('/api', authRoutes);
 app.use('/api/games', games); 
 app.use('/api/players', playersRoutes);
 app.use('/api/teams', teamsRoutes); 
