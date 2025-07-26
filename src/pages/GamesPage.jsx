@@ -39,7 +39,8 @@ const GamesPage = () => {
     
   const openDetailsModal = async (game) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/games/${game.id}`);
+      const res = await fetch(`${API_BASE_URL}/api/games/full/${game.id}`);
+
       if (!res.ok) throw new Error('Spiel konnte nicht geladen werden');
   
       const data = await res.json();
@@ -67,14 +68,15 @@ const GamesPage = () => {
 
   const openResultModal = async (game, readOnly = false) => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/games/${game.id}`);
+      const res = await fetch(`${API_BASE_URL}/api/games/full/${game.id}`);
+
       if (!res.ok) throw new Error('Spiel konnte nicht geladen werden');
   
       const data = await res.json();
       const fullGame = data.game;
   
       // Lade verfügbare Teams für den Nutzer
-      const teamsRes = await fetch(`${API_BASE_URL}/api/games/${user.id}/teams`);
+      const teamsRes = await fetch(`${API_BASE_URL}/api/games/full/${user.id}/teams`);
       const teamData = await teamsRes.json();
       setUserTeams(teamData.myTeams || []);
       setOpponentTeams(teamData.opponentTeams || []);
@@ -237,7 +239,7 @@ const movePlayer = (player, targetTeam) => {
     };
   
     try {
-      const res = await fetch(`${API_BASE_URL}/api/games/${selectedGame.id}/result`, {
+      const res = await fetch(`${API_BASE_URL}/api/games/full/${selectedGame.id}/result`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
@@ -250,7 +252,7 @@ const movePlayer = (player, targetTeam) => {
       }
   
       // Spiel nach dem Update erneut laden
-      const updatedRes = await fetch(`${API_BASE_URL}/api/games/${selectedGame.id}`);
+      const updatedRes = await fetch(`${API_BASE_URL}/api/games/full/${selectedGame.id}`);
   
       if (!updatedRes.ok || !updatedRes.headers.get('content-type')?.includes('application/json')) {
         const fallback = await updatedRes.text();
@@ -286,7 +288,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
 
   const leaveGame = async (gameId) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/leave/${user.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/games/basic/${gameId}/leave/${user.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +301,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
       }
   
       // 🔄 Spiel nach dem Austritt erneut aus dem Backend abrufen
-      const updatedRes = await fetch(`${API_BASE_URL}/api/games/${gameId}`);
+      const updatedRes = await fetch(`${API_BASE_URL}/api/games/full/${gameId}`);
       const updatedData = await updatedRes.json();
   
       // ✅ Stelle sicher, dass die Antwortstruktur korrekt ist
@@ -343,7 +345,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
     setLoading(true);
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games?tab=${activeTab}&userId=${user.id}`);
+      const response = await fetch(`${API_BASE_URL}/api/games/basic?tab=${activeTab}&userId=${user.id}`);
       const data = await response.json();
   
       if (!response.ok) throw new Error(data.message || 'Fehler beim Laden der Spiele');
@@ -406,7 +408,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
     }
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games`, {
+      const response = await fetch(`${API_BASE_URL}/api/games/basic`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -478,7 +480,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
     }
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${gameId}/join`, {
+      const response = await fetch(`${API_BASE_URL}/api/games/full/${gameId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -506,7 +508,7 @@ await openResultModal(updatedGame, resultReadOnly); // Oder true/false je nach K
     if (!confirmed) return;
   
     try {
-      const response = await fetch(`${API_BASE_URL}/api/games/${gameId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/games/full/${gameId}`, {
         method: 'DELETE'
       });
   
