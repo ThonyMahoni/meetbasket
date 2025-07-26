@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 import { badgeCatalog } from '../src/utils/badgeCatalog.js';
 import { authenticateUser } from '../middleware/auth.js';
 
@@ -11,7 +11,7 @@ import fs from 'fs';
 
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
 
 
 // ✅ Geschützte Route
