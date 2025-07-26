@@ -1,7 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import prisma from './prisma/lib.js'; // <-- dein zentraler Prisma-Client
+//import prisma from './prisma/lib.js'; // <-- dein zentraler Prisma-Client
+import prisma from '../src/prisma.js'; // ✅ neu
 import passport from 'passport';
 
 const router = express.Router();
