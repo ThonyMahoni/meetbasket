@@ -1,6 +1,7 @@
 // games.js (NEU, komplett mit Fixes für Team-Zuweisung & Spielerstatistiken)
 import express from 'express';
-import prisma from '../prisma/lib.js';
+//import prisma from '../prisma/lib.js';
+import prisma from '../src/prisma.js'; // ✅ neu
 
 const router = express.Router();
 
