@@ -62,7 +62,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/avatars', express.static('public/avatars'));
 app.use('/api/contact', contactRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api', authRoutes);
+//app.use('/api', authRoutes);
 app.use('/api/activity', homeRoute);
 app.use('/api/newsletter', newsletterRoutes);
 
