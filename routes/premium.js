@@ -1,10 +1,10 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 import { calculateExpiryDate } from '../src/utils/premiumUtils.js';
 
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
 
 // POST /api/premium/subscribe
 router.post('/subscribe', async (req, res) => {
