@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // API-Routen einhängen
 app.use('/api/games', gamesRoutes); // reicht völlig
 app.use('/api/courts', courtsRoutes);
-app.use('/api', authRoutes);
+//app.use('/api', authRoutes);
 app.use('/api/games', games); 
 app.use('/api/players', playersRoutes);
 app.use('/api/teams', teamsRoutes); 
@@ -53,7 +53,7 @@ app.use('/api', teamCreateRoutes);
 app.use('/api/teams', createTeamRoute); // führt zu /api/teams/create
 app.use('/api/users', usersRoutes); // ✅ /api/users verfügbar
 app.use('/api/player', playerRatingRoute);
-app.use('/api/games', gamesRouter);
+//app.use('/api/games', gamesRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/friends', friendsRouter);
 app.use('/api/premium', premiumRoutes);
