@@ -1,11 +1,11 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 import { authenticateUser } from '../middleware/auth.js';
 import bcrypt from 'bcrypt';
 
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
 
 // Default-Werte für neue Benutzer
 const DEFAULT_SETTINGS = {
