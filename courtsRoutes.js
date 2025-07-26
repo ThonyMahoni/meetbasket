@@ -1,11 +1,11 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../src/prisma.js'; 
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+ 
 
 // Speicherort und Dateinamen für Uploads konfigurieren
 const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'courts');
