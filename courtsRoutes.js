@@ -1,5 +1,5 @@
 import express from 'express';
-import prisma from '../src/prisma.js'; 
+import prisma from './src/prisma.js'; 
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
