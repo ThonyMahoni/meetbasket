@@ -314,22 +314,29 @@ const MessagesPage = () => {
 
         {/* Chat Window */}
         {activeConversation ? (
-          <div className="hidden sm:flex flex-col w-2/3 lg:w-3/4 bg-gray-50">
-            <div className="p-4 border-b bg-white flex items-center">
-              <img
-                src={getOtherParticipant(activeConversation).avatar}
-                alt={getOtherParticipant(activeConversation).displayName}
-                className="h-10 w-10 rounded-full mr-3"
-              />
-              <div>
-                <h3 className="font-semibold">
-                  {getOtherParticipant(activeConversation).displayName}
-                </h3>
-                <p className="text-xs text-gray-500">
-                  @{getOtherParticipant(activeConversation).username}
-                </p>
-              </div>
-            </div>
+          <div className="flex flex-col w-full sm:w-2/3 lg:w-3/4 bg-gray-50">
+
+<div className="p-4 border-b bg-white flex items-center">
+  <button
+    onClick={() => setActiveConversation(null)}
+    className="mr-4 p-2 text-blue-600 hover:text-blue-800 focus:outline-none sm:hidden"
+  >
+    ← Zurück
+  </button>
+  <img
+    src={getOtherParticipant(activeConversation).avatar}
+    alt={getOtherParticipant(activeConversation).displayName}
+    className="h-10 w-10 rounded-full mr-3"
+  />
+  <div>
+    <h3 className="font-semibold">
+      {getOtherParticipant(activeConversation).displayName}
+    </h3>
+    <p className="text-xs text-gray-500">
+      @{getOtherParticipant(activeConversation).username}
+    </p>
+  </div>
+</div>
 
             <div className="flex-grow overflow-y-auto p-4 space-y-4">
               {activeConversation.messages.map((msg) => {
