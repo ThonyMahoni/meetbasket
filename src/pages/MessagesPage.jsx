@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE_URL } from '../config';
+import { useSwipeable } from 'react-swipeable';
 
 const MessagesPage = () => {
   const { user: currentUser } = useAuth();
@@ -13,6 +14,16 @@ const MessagesPage = () => {
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messageEndRef = useRef(null);
+
+  const swipeHandlers = useSwipeable({
+    onSwipedRight: () => {
+      if (activeConversation) {
+        setActiveConversation(null);
+      }
+    },
+    preventDefaultTouchmoveEvent: true,
+    trackTouch: true,
+  });
 
   // Neue Konversation starten, wenn receiverId über URL kommt
   useEffect(() => {
@@ -312,17 +323,19 @@ const MessagesPage = () => {
           )}
         </div>
 
-        {/* Chat Window */}
-        {activeConversation ? (
-          <div className="flex flex-col w-full sm:w-2/3 lg:w-3/4 bg-gray-50">
-
-<div className="p-4 border-b bg-white flex items-center">
-  <button
-    onClick={() => setActiveConversation(null)}
-    className="mr-4 p-2 text-blue-600 hover:text-blue-800 focus:outline-none sm:hidden"
+           {/* Chat Window */}
+           {activeConversation ? (
+  <div
+    className="flex flex-col w-full sm:w-2/3 lg:w-3/4 bg-gray-50"
+    {...swipeHandlers}
   >
-    ← Zurück
-  </button>
+    <div className="p-4 border-b bg-white flex items-center">
+      <button
+        onClick={() => setActiveConversation(null)}
+        className="mr-4 p-2 text-blue-600 hover:text-blue-800 focus:outline-none sm:hidden"
+      >
+        ← Zurück
+      </button>
   <img
     src={getOtherParticipant(activeConversation).avatar}
     alt={getOtherParticipant(activeConversation).displayName}
