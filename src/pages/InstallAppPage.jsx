@@ -120,7 +120,7 @@ useEffect(() => {
               </ol>
               <div className="mt-4 bg-gray-100 p-4 rounded-md text-center">
                 <img 
-                  src="/icons/install-app.png" 
+                  src="/public/icons/install-app.png" 
                   alt="iOS Installation Steps - Visueller Leitfaden zum Hinzufügen von Apps zu deinem iOS-Startbildschirm" 
                   className="max-h-40 mx-auto"
                 />
@@ -150,7 +150,7 @@ useEffect(() => {
               </ol>
               <div className="mt-4 bg-gray-100 p-4 rounded-md text-center">
                 <img 
-                  src="/icons/install-app-adroid.png" 
+                  src="/public/icons/install-app-adroid.png" 
                   alt="Android Installation Steps- Visueller Leitfaden zum Hinzufügen von Apps zu deinem Adroid-Startbildschirm" 
                   className="max-h-40 mx-auto"
                 />
