@@ -828,7 +828,7 @@ const handleRatingClick = async (teamId) => {
   className="relative py-2 px-4 rounded-lg bg-gray-200 hover:bg-blue-600 hover:text-white transition"
   title="Freunde"
 >
-  <img src="/icons/myfriends.png" alt="Freunde" className="h-6 w-6" />
+  <img src="/public/icons/myfriends.png" alt="Freunde" className="h-6 w-6" />
 
   {unreadMessages > 0 && (
     <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center shadow-md">
