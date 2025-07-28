@@ -809,36 +809,36 @@ const handleRatingClick = async (teamId) => {
 )}
 
 
-      <div className="mb-4 flex gap-4">
-        <button onClick={() => setActiveTab('players')} className={`py-2 px-4 rounded-lg ${activeTab === 'players' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Spieler
-        </button>
-        <button onClick={() => setActiveTab('teams')} className={`py-2 px-4 rounded-lg ${activeTab === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Teams
-        </button>
-        <button onClick={() => setActiveTab('tournaments')} className={`py-2 px-4 rounded-lg ${activeTab === 'tournaments' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Turniere
-        </button>
-        <button onClick={() => setActiveTab('messages')} id="tab-messages" className={`py-2 px-4 rounded-lg ${activeTab === 'messages' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
-          Connect
-  </button>
-   {/* ✅ Freunde-Icon-Link */}
-   <Link
-  to="/freunde"
-  className="relative py-2 px-4 rounded-lg bg-gray-200 hover:bg-blue-600 hover:text-white transition"
-  title="Freunde"
->
-  <img src="/public/icons/myfriends.png" alt="Freunde" className="h-6 w-6" />
+<div className="mb-4 overflow-x-auto">
+  <div className="flex gap-2 sm:gap-4 whitespace-nowrap px-1">
+    <button onClick={() => setActiveTab('players')} className={`py-2 px-4 rounded-lg ${activeTab === 'players' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+      Spieler
+    </button>
+    <button onClick={() => setActiveTab('teams')} className={`py-2 px-4 rounded-lg ${activeTab === 'teams' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+      Teams
+    </button>
+    <button onClick={() => setActiveTab('tournaments')} className={`py-2 px-4 rounded-lg ${activeTab === 'tournaments' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+      Turniere
+    </button>
+    <button onClick={() => setActiveTab('messages')} id="tab-messages" className={`py-2 px-4 rounded-lg ${activeTab === 'messages' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>
+      Connect
+    </button>
 
-  {unreadMessages > 0 && (
-    <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center shadow-md">
-      {unreadMessages}
-    </div>
-  )}
-</Link>
-
-
-      </div>
+    {/* Freunde-Icon-Link */}
+    <Link
+      to="/freunde"
+      className="relative py-2 px-4 rounded-lg bg-gray-200 hover:bg-blue-600 hover:text-white transition"
+      title="Freunde"
+    >
+      <img src="/public/icons/myfriends.png" alt="Freunde" className="h-6 w-6" />
+      {unreadMessages > 0 && (
+        <div className="absolute -top-1 -right-1 w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center shadow-md">
+          {unreadMessages}
+        </div>
+      )}
+    </Link>
+  </div>
+</div>
 
       {activeTab === 'players' && (
         <div>
