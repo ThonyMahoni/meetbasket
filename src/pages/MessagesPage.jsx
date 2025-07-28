@@ -430,6 +430,11 @@ const MessagesPage = () => {
           </div>
         )}
       </div>
+      <div className="mt-8 text-center">
+        <Link to="/games" className="text-blue-600 hover:underline">
+        Finde neue Basketball-Spiele an denen Du teilnehmen kannst.
+        </Link>
+      </div>
     </div>
   );
 };
