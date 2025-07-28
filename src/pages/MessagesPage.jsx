@@ -16,14 +16,16 @@ const MessagesPage = () => {
   const messageEndRef = useRef(null);
 
   const swipeHandlers = useSwipeable({
-    onSwipedRight: () => {
-      if (activeConversation) {
-        setActiveConversation(null);
-      }
-    },
-    preventDefaultTouchmoveEvent: true,
-    trackTouch: true,
-  });
+  onSwipedRight: () => {
+    console.log('👉 Swipe erkannt');
+    if (activeConversation) {
+      setActiveConversation(null);
+    }
+  },
+  preventDefaultTouchmoveEvent: true,
+  trackTouch: true,
+});
+
 
   // Neue Konversation starten, wenn receiverId über URL kommt
   useEffect(() => {
