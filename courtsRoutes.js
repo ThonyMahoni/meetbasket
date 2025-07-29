@@ -94,20 +94,28 @@ router.post('/', async (req, res) => {
 });
 
 
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
 function calculateDistance(lat1, lon1, lat2, lon2) {
-  const R = 6371; // Radius der Erde in km
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const R = 6371; // Erdradius in Kilometern
+
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+
+  const radLat1 = deg2rad(lat1);
+  const radLat2 = deg2rad(lat2);
+
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(lat1 * Math.PI / 180) *
-    Math.cos(lat2 * Math.PI / 180) *
-    Math.sin(dLon / 2) *
-    Math.sin(dLon / 2);
+    Math.cos(radLat1) * Math.cos(radLat2) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
 
 // GET /api/courts/nearby?lat=52.5&lng=13.4
 router.get('/nearby', async (req, res) => {
