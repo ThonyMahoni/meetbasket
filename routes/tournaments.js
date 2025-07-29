@@ -19,10 +19,10 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Neues Turnier erstellen
-router.post('/', async (req, res) => {
-    const { title, organizer, date, format, location, entryFee, prizes, maxParticipants, creatorId } = req.body;
 
+// Neues Turnier erstellen (POST)
+router.post('/', async (req, res) => {
+  const { title, organizer, date, format, location, entryFee, prizes, maxParticipants, creatorId } = req.body;
 
   if (!title || !organizer || !date || !format || !location) {
     return res.status(400).json({ error: 'Pflichtfelder fehlen' });
@@ -36,19 +36,21 @@ router.post('/', async (req, res) => {
         date: new Date(date),
         format,
         location,
-        entryFee: entryFee || null,
+        entryFee: entryFee || null, // 🔁 einfach als String durchreichen
         prizes: prizes || null,
-        maxParticipants: maxParticipants ? parseInt(maxParticipants) : null, // ← hinzufügen
-        creatorId: creatorId,
+        maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
+        creatorId,
       }
     });
 
+    cache.del('all_tournaments');
     res.status(201).json({ message: 'Turnier erfolgreich erstellt', id: tournament.id });
   } catch (error) {
     console.error('Fehler beim Erstellen des Turniers:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
+
 
 // Beitritt zu einem Turnier
 router.post('/:id/join', async (req, res) => {
