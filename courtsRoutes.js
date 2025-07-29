@@ -238,6 +238,12 @@ router.post('/:id/reviews', async (req, res) => {
 // GET /api/courts/:id/reviews → Alle Reviews für einen Court
 router.get('/:id/reviews', async (req, res) => {
   const courtId = parseInt(req.params.id);
+  const cacheKey = `reviews_${courtId}`;
+  const cachedReviews = cache.get(cacheKey);
+
+  if (cachedReviews) {
+    return res.status(200).json({ reviews: cachedReviews }); // Cache-Hit 🎯
+  }
 
   try {
     const reviews = await prisma.review.findMany({
@@ -245,12 +251,14 @@ router.get('/:id/reviews', async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
+    cache.set(cacheKey, reviews); // Cache speichern ✅
     res.status(200).json({ reviews });
   } catch (error) {
     console.error('❌ Fehler beim Laden der Reviews:', error);
     res.status(500).json({ message: 'Reviews konnten nicht geladen werden.' });
   }
 });
+
 
 // Beispiel mit Express + Prisma
 router.post('/:id/rate', async (req, res) => {
