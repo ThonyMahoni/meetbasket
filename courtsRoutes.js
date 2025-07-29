@@ -3,9 +3,11 @@ import prisma from './src/prisma.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 120 }); // TTL = 2 Minuten
 
 const router = express.Router();
- 
+
 
 // Speicherort und Dateinamen für Uploads konfigurieren
 const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'courts');
@@ -46,10 +48,18 @@ router.post('/upload', upload.single('image'), (req, res) => {
 
 // GET /api/courts → Alle Courts abrufen
 router.get('/', async (req, res) => {
+  const cachedCourts = cache.get('all_courts');
+
+  if (cachedCourts) {
+    return res.json({ courts: cachedCourts }); // Cache-Hit 🎯
+  }
+
   try {
     const courts = await prisma.court.findMany({
       orderBy: { name: 'asc' }
     });
+
+    cache.set('all_courts', courts); // Cache speichern ✅
     res.json({ courts });
   } catch (error) {
     console.error('❌ Fehler beim Abrufen der Courts:', error);
