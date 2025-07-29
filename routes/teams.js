@@ -2,42 +2,61 @@
 import express from 'express';
 //import prisma from '../prisma/lib.js';
 import prisma from '../src/prisma.js'; // ✅ neu
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 120 }); // Cache für 2 Minuten
+
+
 
 const router = express.Router();
 
 router.get('/', async (req, res) => {
-    try {
-      const teams = await prisma.team.findMany({
-        include: {
-          members: {
-            include: { user: true }, // Spieler-Daten in den Mitgliedern
-          },
+  const cachedTeams = cache.get('all_teams');
+  if (cachedTeams) return res.json(cachedTeams); // 🎯 Cache-Hit
+
+  try {
+    const teams = await prisma.team.findMany({
+      include: {
+        members: {
+          include: { user: true },
         },
-      });
-      res.json(teams);
-    } catch (error) {
-      console.error('Fehler beim Abrufen der Teams:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
-    }
-  });
+      },
+    });
+
+    cache.set('all_teams', teams); // ✅ speichern
+    res.json(teams);
+  } catch (error) {
+    console.error('Fehler beim Abrufen der Teams:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
 
 
-  router.get('/:id', async (req, res) => {
-    try {
-      const team = await prisma.team.findUnique({
-        where: { id: Number(req.params.id) },
-        include: {
-          members: {
-            include: { user: true },
-          },
+
+router.get('/:id', async (req, res) => {
+  const teamId = Number(req.params.id);
+  const cachedTeam = cache.get(`team_${teamId}`);
+  if (cachedTeam) return res.json(cachedTeam); // 💨 Cache-Hit
+
+  try {
+    const team = await prisma.team.findUnique({
+      where: { id: teamId },
+      include: {
+        members: {
+          include: { user: true },
         },
-      });
-      res.json(team);
-    } catch (error) {
-      console.error('Fehler beim Abrufen des Teams:', error);
-      res.status(500).json({ error: 'Interner Serverfehler' });
-    }
-  });
+      },
+    });
+
+    if (!team) return res.status(404).json({ error: 'Team nicht gefunden' });
+
+    cache.set(`team_${teamId}`, team); // ✅ speichern
+    res.json(team);
+  } catch (error) {
+    console.error('Fehler beim Abrufen des Teams:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
   
 
  // POST /api/teams/:id/rate
@@ -97,6 +116,7 @@ router.post('/:id/rate', async (req, res) => {
           }
         });
       }
+     
   
       res.json(updatedTeam);
   
@@ -125,11 +145,12 @@ router.put('/:id', async (req, res) => {
           userId,
         },
       });
-  
+      cache.del(`team_${teamId}`);
       // Alte Mitglieder löschen
       await prisma.teamMember.deleteMany({
         where: { teamId },
       });
+      
   
       // Neue Mitglieder hinzufügen
       if (selectedPlayerIds?.length > 0) {
@@ -141,6 +162,7 @@ router.put('/:id', async (req, res) => {
           })),
         });
       }
+      cache.del(`team_${teamId}`);
   
       res.json(updatedTeam);
   
