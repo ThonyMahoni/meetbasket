@@ -1,23 +1,34 @@
 import express from 'express';
 //import prisma from '../prisma/lib.js';
 import prisma from '../src/prisma.js'; // ✅ neu
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 120 }); // Cache für 2 Minuten
+
 
 const router = express.Router();
 
 // Alle Turniere abrufen
 router.get('/', async (req, res) => {
+  const cachedTournaments = cache.get('all_tournaments');
+
+  if (cachedTournaments) {
+    return res.json(cachedTournaments); // 🎉 Cache-Hit
+  }
+
   try {
     const tournaments = await prisma.tournament.findMany({
       orderBy: { date: 'asc' },
-      include: { participants: true }, // ← Wichtig!
-
+      include: { participants: true },
     });
+
+    cache.set('all_tournaments', tournaments); // ✅ Cache speichern
     res.json(tournaments);
   } catch (error) {
     console.error('Fehler beim Abrufen der Turniere:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
   }
 });
+
 
 
 // Neues Turnier erstellen (POST)
@@ -92,6 +103,8 @@ router.post('/:id/join', async (req, res) => {
           },
         },
       });
+      cache.del('all_tournaments');
+
   
       res.status(200).json({ message: 'Beitritt erfolgreich' });
     } catch (err) {
@@ -119,6 +132,8 @@ router.post('/:id/leave', async (req, res) => {
           },
         },
       });
+      cache.del('all_tournaments');
+
   
       res.status(200).json({ message: 'Erfolgreich ausgetreten' });
     } catch (err) {
@@ -157,6 +172,8 @@ router.put('/:id', async (req, res) => {
           maxParticipants: maxParticipants ? parseInt(maxParticipants) : null,
         },
       });
+      cache.del('all_tournaments');
+
   
       res.status(200).json(updatedTournament);
     } catch (error) {
