@@ -654,53 +654,54 @@ const handleRatingClick = async (teamId) => {
   
 
   const handleTournamentSubmit = async () => {
-    try {
-      const payload = {
-        ...formData,
-        date: new Date(formData.date).toISOString(),
-        maxParticipants: parseInt(formData.maxParticipants),
-        entryFee: formData.entryFee ? parseFloat(formData.entryFee) : null,
-      };
-  
-      if (editingTournamentId) {
-        delete payload.creatorId; // wichtig
-      } else {
-        payload.creatorId = user.id;
-      }
-  
-      const res = await fetch(
-        editingTournamentId
-          ? `${API_BASE}/api/tournaments/${editingTournamentId}`
-          : `${API_BASE}/api/tournaments/create`,
-        {
-          method: editingTournamentId ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
-  
-      if (!res.ok) {
-        throw new Error(editingTournamentId ? 'Fehler beim Bearbeiten des Turniers' : 'Fehler beim Erstellen des Turniers');
-      }
-  
-      const updatedOrNewTournament = await res.json();
-  
-      if (editingTournamentId) {
-        setTournaments((prev) =>
-          prev.map((t) => (t.id === updatedOrNewTournament.id ? updatedOrNewTournament : t))
-        );
-      } else {
-        setTournaments([...tournaments, updatedOrNewTournament]);
-      }
-  
-      setShowCreateForm(false);
-      setFormData({});
-      setEditingTournamentId(null);
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
+  try {
+    const payload = {
+      ...formData,
+      date: new Date(formData.date).toISOString(),
+      maxParticipants: parseInt(formData.maxParticipants),
+      entryFee: formData.entryFee || null, // 🔁 nicht parseFloat
+    };
+
+    if (editingTournamentId) {
+      delete payload.creatorId;
+    } else {
+      payload.creatorId = user.id;
     }
-  };
+
+    const res = await fetch(
+      editingTournamentId
+        ? `${API_BASE}/api/tournaments/${editingTournamentId}`
+        : `${API_BASE}/api/tournaments/`,
+      {
+        method: editingTournamentId ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error(editingTournamentId ? 'Fehler beim Bearbeiten des Turniers' : 'Fehler beim Erstellen des Turniers');
+    }
+
+    const updatedOrNewTournament = await res.json();
+
+    if (editingTournamentId) {
+      setTournaments((prev) =>
+        prev.map((t) => (t.id === updatedOrNewTournament.id ? updatedOrNewTournament : t))
+      );
+    } else {
+      setTournaments([...tournaments, updatedOrNewTournament]);
+    }
+
+    setShowCreateForm(false);
+    setFormData({});
+    setEditingTournamentId(null);
+  } catch (error) {
+    console.error(error);
+    alert(error.message);
+  }
+};
+
   
   
 
@@ -1211,17 +1212,18 @@ const handleRatingClick = async (teamId) => {
             }
             required
           />
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="💰 Teilnahmegebühr in €"
-            className="border border-gray-300 rounded px-3 py-2"
-            value={formData.entryFee ? `${formData.entryFee} €` : ''}
-            onChange={(e) => {
-              const numeric = e.target.value.replace(/\D/g, '');
-              setFormData({ ...formData, entryFee: numeric });
-            }}
-          />
+       <input
+  type="text"
+  inputMode="numeric"
+  placeholder="💰 Teilnahmegebühr in €"
+  className="border border-gray-300 rounded px-3 py-2"
+  value={formData.entryFee !== '' ? `${formData.entryFee} €` : ''}
+  onChange={(e) => {
+    const raw = e.target.value.replace(/[^\d.]/g, ''); // erlaubt 10.5 oder 10
+    setFormData({ ...formData, entryFee: raw });
+  }}
+/>
+
           <input
             type="text"
             placeholder="🏆 Preise (optional)"
