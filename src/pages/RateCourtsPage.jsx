@@ -291,7 +291,7 @@ const [courtReviews, setCourtReviews] = useState([]);
                 {/* Court-Bild anzeigen, erstes Bild aus imageUrls oder Platzhalter */}
                 {court.image ? (
   <img
-    src={court.image}
+    src={`/courts/${court.image}`}
     alt={court.name}
     className="object-cover w-full h-40"
   />
