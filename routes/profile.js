@@ -6,7 +6,8 @@ import { authenticateUser } from '../middleware/auth.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 180 }); // z. B. 3 Min Cache
 
 
 
@@ -16,9 +17,16 @@ const router = express.Router();
 
 // ✅ Geschützte Route
 router.get('/me', authenticateUser, async (req, res) => {
+  const userId = req.user.id;
+  const cachedProfile = cache.get(`profile_me_${userId}`);
+
+  if (cachedProfile) {
+    return res.json(cachedProfile); // 🚀 Cache-Hit
+  }
+
   try {
     const user = await prisma.user.findUnique({
-      where: { id: req.user.id },
+      where: { id: userId },
       include: {
         profile: true,
         achievements: true,
@@ -29,12 +37,14 @@ router.get('/me', authenticateUser, async (req, res) => {
       return res.status(404).json({ message: 'Benutzer nicht gefunden' });
     }
 
+    cache.set(`profile_me_${userId}`, user); // ✅ Cache setzen
     res.json(user);
   } catch (err) {
     console.error('Fehler bei /me:', err);
     res.status(500).json({ message: 'Serverfehler' });
   }
 });
+
 
 // ⚙️ Multer Konfiguration
 const uploadDir = './public/avatars';
@@ -67,6 +77,7 @@ router.post('/:userId/avatar', upload.single('avatar'), async (req, res) => {
         where: { userId },
         data: { imageUrl: avatarUrl }, // ✅ Korrektur hier
       });
+      cache.del(`profile_me_${userId}`);
   
       res.json({ imageUrl: avatarUrl });
     } catch (error) {
@@ -85,6 +96,8 @@ router.get('/:userId', async (req, res) => {
   if (isNaN(userId)) {
     return res.status(400).json({ error: 'Ungültige Benutzer-ID' });
   }
+  const cachedProfile = cache.get(`profile_${userId}`);
+  if (cachedProfile) return res.json(cachedProfile); // ⚡ Cache-Hit
 
   try {
     const user = await prisma.user.findUnique({
@@ -276,7 +289,7 @@ router.get('/:userId', async (req, res) => {
       email: user.email,
       isPremium: user.isPremium,
     });
-
+    cache.set(`profile_${userId}`, response); 
   } catch (error) {
     console.error('❌ Serverfehler in /api/profile/:userId:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
@@ -335,6 +348,9 @@ router.put('/:userId', async (req, res) => {
         create: { userId, latitude, longitude, city: location || '' },
       });
     }
+    cache.del(`profile_${userId}`);
+    cache.del(`stats_${userId}`);
+
 
     res.json({ success: true });
   } catch (error) {
@@ -351,6 +367,8 @@ router.get('/:userId/stats', async (req, res) => {
     if (isNaN(userId)) {
       return res.status(400).json({ error: 'Ungültige Benutzer-ID' });
     }
+    const cachedStats = cache.get(`stats_${userId}`);
+  if (cachedStats) return res.json(cachedStats); // 
   
     try {
         const participations = await prisma.gameParticipant.findMany({
@@ -409,6 +427,7 @@ router.get('/:userId/stats', async (req, res) => {
         reboundsPerGame: totalGames > 0 ? (totalRebounds / totalGames).toFixed(1) : "0",
         winRate: totalGames > 0 ? ((wins / totalGames) * 100).toFixed(1) + "%" : "0%"
       };
+      cache.set(`stats_${userId}`, stats); // 🧠 speichern
   
       res.json(stats);
     } catch (error) {
@@ -421,6 +440,8 @@ router.get('/:userId/stats', async (req, res) => {
 // ✅ GET /api/profile/by-username/:username
 router.get('/by-username/:username', async (req, res) => {
     const { username } = req.params;
+    const cachedProfile = cache.get(`username_${username}`);
+    if (cachedProfile) return res.json(cachedProfile); //
   
     try {
       const user = await prisma.user.findUnique({
@@ -607,6 +628,8 @@ router.get('/by-username/:username', async (req, res) => {
         playerStats,
         isPremium: user.isPremium
       });
+      cache.set(`username_${username}`, response); // 🧠 speichern
+      res.json(response);
     } catch (error) {
       console.error('❌ Fehler in GET /by-username:', error);
       res.status(500).json({ error: 'Interner Serverfehler' });
