@@ -2,6 +2,8 @@
 import express from 'express';
 //import prisma from '../prisma/lib.js';
 import prisma from '../src/prisma.js'; // ✅ neu
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 300 }); // ⏱ z. B. 5 Minuten Cache-Lebenszeit
 
 const router = express.Router();
 
@@ -10,6 +12,10 @@ router.get('/test', (req, res) => res.send('Games-Router funktioniert ✅'));
 // 📋 Spiele laden (Upcoming/Past)
 router.get('/', async (req, res) => {
   const { tab } = req.query;
+  const cacheKey = `games_tab_${tab}`;
+
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json({ games: cached });
 
   try {
     const games = await prisma.game.findMany({
@@ -35,6 +41,7 @@ router.get('/', async (req, res) => {
       teamBPlayers: game.participants.filter(p => p.team === 'B').map(p => p.user)
     }));
 
+    cache.set(cacheKey, gamesWithPlayers); // ✅ Caching
     res.json({ games: gamesWithPlayers });
   } catch (err) {
     console.error('❌ Fehler beim Laden der Spiele:', err);
@@ -45,6 +52,10 @@ router.get('/', async (req, res) => {
 // 🧾 Einzelnes Spiel abrufen
 router.get('/:id', async (req, res) => {
   const gameId = parseInt(req.params.id);
+
+  const cacheKey = `game_${gameId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json({ game: cached });
 
   try {
     const game = await prisma.game.findUnique({
@@ -107,6 +118,7 @@ const allPlayers = participants.map(p => p.user);
       stats: game.stats
     };
 
+    cache.set(cacheKey, gameDetails); // ✅ speichern
     res.json({ game: gameDetails });
   } catch (err) {
     console.error(`❌ Fehler beim Abrufen von Spiel #${gameId}:`, err);
@@ -221,7 +233,10 @@ if (game?.organizerId && !existingIds.includes(game.organizerId)) {
         teamB: true
       }
     });
-    
+
+    cache.del(`game_${gameId}`);
+    cache.del(`games_tab_upcoming`);
+    cache.del(`games_tab_past`);
   
     res.json({
       ...updatedGame,
