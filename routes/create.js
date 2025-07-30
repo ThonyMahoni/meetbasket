@@ -1,6 +1,10 @@
 import express from 'express';
 //import prisma from '../prisma/lib.js';
 import prisma from '../src/prisma.js'; // ✅ neu
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 180 });
+
+
 
 const router = express.Router();
 
@@ -25,6 +29,10 @@ router.post('/create', async (req, res) => {
         role: 'Captain'
       }
     });
+    // 🧼 Cache leeren für alle betroffenen Spieler
+   cache.del(`teams_${creatorId}`);
+   playerIds.forEach(id => cache.del(`teams_${id}`));
+
 
     // Restliche Spieler als Member hinzufügen
     const filteredPlayerIds = playerIds.filter(id => id !== creatorId);
