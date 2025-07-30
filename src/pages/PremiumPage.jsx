@@ -326,7 +326,7 @@ const PremiumPage = () => {
 
     return (
       <div className="flex flex-col items-center">
-        <h2 className="text-2xl font-semibold mb-6">Hoop Connect Premium</h2>
+        <h2 className="text-2xl font-semibold mb-6">MeetBasket Premium</h2>
 
         <div className="w-full max-w-md bg-gray-50 p-6 rounded-lg border border-gray-200 mb-8">
           <h3 className="text-lg font-semibold mb-3">Order Summary</h3>
@@ -390,8 +390,8 @@ const PremiumPage = () => {
         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
       </svg>
-      <h2 className="text-xl font-semibold mb-2">Processing Your Payment</h2>
-      <p className="text-gray-600">Please wait while we process your payment...</p>
+      <h2 className="text-xl font-semibold mb-2">Ihre Zahlung wird bearbeitet</h2>
+      <p className="text-gray-600">Bitte warten Sie, während wir Ihre Zahlung verarbeiten....</p>
     </div>
   );
 
@@ -402,7 +402,7 @@ const PremiumPage = () => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
         </svg>
       </div>
-      <h2 className="text-2xl font-semibold mb-2">Payment Successful!</h2>
+      <h2 className="text-2xl font-semibold mb-2">Zahlung erfolgreich!</h2>
       <p className="text-gray-600 mb-6 text-center">
       Danke, dass Sie auf Premium aktualisiert haben! Ihr Konto wurde aktualisiert und alle Premium-Funktionen sind jetzt verfügbar.
       </p>
@@ -424,7 +424,7 @@ const PremiumPage = () => {
         onClick={handleContinue}
         className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        Weiter mit Hoop Connect
+        Weiter mit MeetBasket
       </button>
     </div>
   );
@@ -437,7 +437,7 @@ const PremiumPage = () => {
     <div className="bg-white min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Upgrade zu Basketball Connect Premium</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold mb-2">Upgrade zu MeetBasket Premium</h1>
           <p className="text-xl text-gray-600">Schalte alle Premium-Funktionen frei und bringe dein Spiel auf die nächste Stufe.</p>
         </div>
         {renderStep()}
