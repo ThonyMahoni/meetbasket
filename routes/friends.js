@@ -1,7 +1,11 @@
 import express from 'express';
 import prisma from '../src/prisma.js'; 
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 180 }); // z. B. 3 Min Cache
+
 
 const router = express.Router();
+
 
 // Nutzer-ID aus Header extrahieren
 const getUserId = (req) => {
@@ -14,6 +18,10 @@ const getUserId = (req) => {
 router.get('/', async (req, res) => {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const cacheKey = `friends_${userId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json(cached); // ⚡ schneller Cache
 
   try {
     const friendships = await prisma.friendship.findMany({
@@ -43,6 +51,7 @@ router.get('/', async (req, res) => {
       };
     });
 
+    cache.set(cacheKey, friends); // ✅ speichern
     res.json(friends);
   } catch (err) {
     console.error('Error fetching friends:', err);
@@ -50,10 +59,15 @@ router.get('/', async (req, res) => {
   }
 });
 
+
 // 📨 GET /api/friends/requests – Eingehende Anfragen
 router.get('/requests', async (req, res) => {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const cacheKey = `requests_received_${userId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json(cached);
 
   try {
     const requests = await prisma.friendship.findMany({
@@ -75,6 +89,7 @@ router.get('/requests', async (req, res) => {
       requestDate: r.createdAt,
     }));
 
+    cache.set(cacheKey, result);
     res.json(result);
   } catch (err) {
     console.error('Error loading incoming requests:', err);
@@ -82,10 +97,15 @@ router.get('/requests', async (req, res) => {
   }
 });
 
+
 // 📤 GET /api/friends/requests/sent – Gesendete Anfragen
 router.get('/requests/sent', async (req, res) => {
   const userId = getUserId(req);
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+
+  const cacheKey = `requests_sent_${userId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json(cached);
 
   try {
     const sent = await prisma.friendship.findMany({
@@ -107,12 +127,14 @@ router.get('/requests/sent', async (req, res) => {
       requestDate: r.createdAt,
     }));
 
+    cache.set(cacheKey, result);
     res.json(result);
   } catch (err) {
     console.error('Error loading sent requests:', err);
     res.status(500).json({ error: 'Failed to load sent requests' });
   }
 });
+
 
 // ➕ POST /api/friends/requests – Neue Freundschaftsanfrage
 router.post('/requests', async (req, res) => {
@@ -154,6 +176,9 @@ router.post('/requests', async (req, res) => {
           status: 'pending',
         },
       });
+      cache.del(`requests_sent_${userId}`);
+      cache.del(`requests_received_${addresseeId}`);
+
   
       res.json({ success: true, request });
     } catch (err) {
@@ -181,6 +206,9 @@ router.post('/requests/:id/accept', async (req, res) => {
       where: { id: requestId },
       data: { status: 'accepted' },
     });
+    cache.del(`friends_${userId}`);
+    cache.del(`friends_${friendId}`);
+
 
     res.json({ success: true });
   } catch (err) {
@@ -204,6 +232,9 @@ router.post('/requests/:id/decline', async (req, res) => {
     }
 
     await prisma.friendship.delete({ where: { id: requestId } });
+    cache.del(`friends_${userId}`);
+    cache.del(`friends_${friendId}`);
+
 
     res.json({ success: true });
   } catch (err) {
@@ -227,6 +258,8 @@ router.delete('/requests/sent/:id', async (req, res) => {
     }
 
     await prisma.friendship.delete({ where: { id: requestId } });
+    cache.del(`friends_${userId}`);
+    cache.del(`friends_${friendId}`);
 
     res.json({ success: true });
   } catch (err) {
@@ -256,6 +289,8 @@ router.delete('/:id', async (req, res) => {
     if (!friendship) return res.status(404).json({ error: 'Friendship not found' });
 
     await prisma.friendship.delete({ where: { id: friendship.id } });
+    cache.del(`friends_${userId}`);
+    cache.del(`friends_${friendId}`);
 
     res.json({ success: true });
   } catch (err) {
