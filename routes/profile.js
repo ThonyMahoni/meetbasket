@@ -7,7 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import NodeCache from 'node-cache';
-const cache = new NodeCache({ stdTTL: 180 }); // z. B. 3 Min Cache
+const cache = new NodeCache({ stdTTL: 180 }); // ca. 2min Cache
 
 
 
