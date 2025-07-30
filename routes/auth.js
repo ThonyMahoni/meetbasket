@@ -3,8 +3,10 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import prisma from '../src/prisma.js'; 
 import bcrypt from 'bcryptjs';
-
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 300 }); 
 const router = express.Router();
+
 
 router.post('/login', async (req, res) => {
   const { identifier, password } = req.body;
@@ -41,18 +43,24 @@ router.get('/google-login', passport.authenticate('google', {
 
 export const authenticateToken = async (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  const token = authHeader?.split(' ')[1]; // "Bearer xyz"
-
+  const token = authHeader?.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Kein Token vorhanden' });
+
+  // 🔍 Token-Hash als Cache-Schlüssel (oder einfach Token, wenn JWT geheim ist)
+  const cacheKey = `user_from_token_${token}`;
+  const cachedUser = cache.get(cacheKey);
+  if (cachedUser) {
+    req.user = cachedUser;
+    return next();
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
+    const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+    if (!user) return res.status(401).json({ message: 'Benutzer nicht gefunden' });
 
-    if (!req.user) return res.status(401).json({ message: 'Benutzer nicht gefunden' });
-
+    req.user = user;
+    cache.set(cacheKey, user); // ✅ Caching
     next();
   } catch (err) {
     console.error('Token ungültig:', err);
@@ -67,7 +75,7 @@ router.get('/google/callback', passport.authenticate('google', {
 }), (req, res) => {
   // Nach erfolgreichem Login kannst du hier einen JWT setzen oder redirecten
   // Beispiel:
-  res.redirect(`http://localhost:5174?user=${encodeURIComponent(JSON.stringify(req.user))}`);
+  res.redirect(`https://meetbasket.com/?user=${encodeURIComponent(JSON.stringify(req.user))}`);
 });
 
 export default router;
