@@ -1,6 +1,9 @@
 // Nur zuständig für Ratings, obwohl der Dateiname verwirrt!
 import express from 'express';
 import prisma from '../src/prisma.js'; 
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 120 }); // ⏱ 2 Minuten Cache für Spielerliste
+
 
 
 const router = express.Router();
@@ -27,7 +30,8 @@ router.post('/', async (req, res) => {
       data: { raterId, ratedId, score },
     });
 
-    res.json(newRating);
+    cache.del(`players_for_${raterId}`);
+    res.json(updated || newRating);
   } catch (error) {
     console.error('Fehler beim Bewerten:', error);
     res.status(500).json({ error: 'Fehler beim Bewerten' });
@@ -42,8 +46,11 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ error: 'userId query param missing or invalid' });
   }
 
+  const cacheKey = `players_for_${userId}`;
+  const cachedPlayers = cache.get(cacheKey);
+  if (cachedPlayers) return res.json(cachedPlayers); // 🧊 Cache-Hit
+
   try {
-    // Alle Spieler außer dem eingeloggten
     const players = await prisma.user.findMany({
       where: {
         id: { not: userId }
@@ -54,7 +61,6 @@ router.get('/', async (req, res) => {
         position: true,
         skillLevel: true,
         createdAt: true,
-        
         location: true,
         achievements: true,
         ratingsReceived: {
@@ -68,11 +74,9 @@ router.get('/', async (req, res) => {
 
     const playersWithRatings = players.map((player) => {
       const ratings = player.ratingsReceived;
-
       const averageRating = ratings.length > 0
         ? ratings.reduce((sum, r) => sum + r.score, 0) / ratings.length
         : 0;
-
       const latestRating = ratings.find((r) => r.raterId === userId)?.score ?? null;
 
       return {
@@ -88,12 +92,14 @@ router.get('/', async (req, res) => {
       };
     });
 
+    cache.set(cacheKey, playersWithRatings); // ✅ speichern
     res.json(playersWithRatings);
   } catch (error) {
     console.error('Fehler beim Laden der Spieler:', error);
     res.status(500).json({ error: 'Fehler beim Laden der Spieler' });
   }
 });
+
 
 
 
