@@ -2,6 +2,9 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import dotenv from 'dotenv';
 import prisma from '../src/prisma.js'; 
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 300 }); // ⏱ z. B. 5 Min Cache für Sessions
+
 
 dotenv.config();
 
@@ -11,7 +14,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: 'http://localhost:5174/api/auth/google/callback',
+      callbackURL: 'https://meetbasket.com//api/auth/google/callback',
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -35,6 +38,8 @@ passport.use(
             },
           },
         });
+        cache.set(`session_user_${user.id}`, user);
+
 
         return done(null, newUser);
       } catch (err) {
@@ -48,6 +53,15 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 passport.deserializeUser(async (id, done) => {
-  const user = await prisma.user.findUnique({ where: { id } });
-  done(null, user);
+  const cachedUser = cache.get(`session_user_${id}`);
+  if (cachedUser) return done(null, cachedUser); // ⚡ Cache-Hit
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id } });
+    if (user) cache.set(`session_user_${id}`, user); // ✅ speichern
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
 });
+
