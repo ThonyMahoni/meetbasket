@@ -7,7 +7,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import NodeCache from 'node-cache';
-const cache = new NodeCache({ stdTTL: 180 }); // ca. 2min Cache
+const cache = new NodeCache({ stdTTL: 180 }); // z. B. 3 Min Cache
 
 
 
@@ -275,21 +275,23 @@ router.get('/:userId', async (req, res) => {
       ? user.location.city || `${user.location.latitude}, ${user.location.longitude}`
       : '';
 
-    res.json({
-      id: user.id,
-      username: user.username,
-      name: user.profile?.name ?? user.username ?? '',
-      skillLevel: user.skillLevel,
-      position: user.position,
-      location: locationString,
-      profile: user.profile,
-      achievements: dynamicBadges,
-      recentGames,
-      playerStats,
-      email: user.email,
-      isPremium: user.isPremium,
-    });
-    cache.set(`profile_${userId}`, response); 
+      const responsePayload = {
+        id: user.id,
+        username: user.username,
+        name: user.profile?.name ?? user.username ?? '',
+        skillLevel: user.skillLevel,
+        position: user.position,
+        location: locationString,
+        profile: user.profile,
+        achievements: dynamicBadges,
+        recentGames,
+        playerStats,
+        email: user.email,
+        isPremium: user.isPremium,
+      };
+      
+      res.json(responsePayload); // ✅ Client bekommt das
+      cache.set(`profile_${userId}`, responsePayload); // ✅ wird gecached
   } catch (error) {
     console.error('❌ Serverfehler in /api/profile/:userId:', error);
     res.status(500).json({ error: 'Interner Serverfehler' });
