@@ -1,7 +1,8 @@
 import express from 'express';
 import prisma from '../src/prisma.js'; 
 import { calculateExpiryDate } from '../src/utils/premiumUtils.js';
-
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 300 }); // Cache for 5 minutes
 
 const router = express.Router();
 
@@ -32,5 +33,39 @@ router.post('/subscribe', async (req, res) => {
     res.status(500).json({ error: 'Failed to subscribe to premium' });
   }
 });
+
+router.get('/status/:userId', async (req, res) => {
+  const userId = parseInt(req.params.userId);
+  if (isNaN(userId)) return res.status(400).json({ error: 'Ungültige Benutzer-ID' });
+
+  const cached = cache.get(`premium_${userId}`);
+  if (cached) return res.json(cached); // ⚡ schneller Zugriff
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        isPremium: true,
+        premiumTier: true,
+        premiumExpiryDate: true
+      }
+    });
+
+    if (!user) return res.status(404).json({ error: 'Benutzer nicht gefunden' });
+
+    const result = {
+      isPremium: user.isPremium,
+      tier: user.premiumTier,
+      expiryDate: user.premiumExpiryDate
+    };
+
+    cache.set(`premium_${userId}`, result); // 🧠 speichern
+    res.json(result);
+  } catch (error) {
+    console.error('Fehler beim Abrufen des Premium-Status:', error);
+    res.status(500).json({ error: 'Interner Serverfehler' });
+  }
+});
+
 
 export default router;
