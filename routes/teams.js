@@ -6,7 +6,6 @@ import NodeCache from 'node-cache';
 const cache = new NodeCache({ stdTTL: 120 }); // Cache für 2 Minuten
 
 
-
 const router = express.Router();
 
 router.get('/', async (req, res) => {
