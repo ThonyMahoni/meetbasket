@@ -1,5 +1,8 @@
 import express from 'express';
-import prisma from '../src/prisma.js'; 
+import prisma from '../src/prisma.js'; // ✅ neu
+import NodeCache from 'node-cache';
+const cache = new NodeCache({ stdTTL: 300 }); // ⏱ 5 Minuten Lebenszeit
+
 
 const router = express.Router();
 
@@ -8,6 +11,9 @@ const router = express.Router();
 router.get('/conversations', async (req, res) => {
   const userId = parseInt(req.query.userId);
   if (!userId) return res.status(400).json({ error: 'userId fehlt in der Query' });
+  const cacheKey = `conversations_${userId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json(cached);
 
   try {
     const conversations = await prisma.conversation.findMany({
@@ -33,6 +39,8 @@ router.get('/conversations', async (req, res) => {
       participantIds: conv.participants.map(p => p.id),
       lastMessage: conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null
     }));
+
+    cache.set(cacheKey, enriched);
 
     res.json(enriched);
   } catch (error) {
@@ -94,38 +102,42 @@ router.post('/start', async (req, res) => {
 
 // GET /api/messages/:id – Einzelne Konversation (z. B. Refresh)
 router.get('/:id', async (req, res) => {
-  const id = parseInt(req.params.id);
+  const conversationId = parseInt(req.params.id);
+  if (!conversationId) {
+    return res.status(400).json({ error: 'Conversation ID fehlt oder ist ungültig.' });
+  }
+
+  const cacheKey = `conversation_${conversationId}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return res.json(cached); // ⚡ Schneller Cache-Hit
 
   try {
-    const conversationId = parseInt(req.params.id); // oder req.query.id – je nachdem wie du es übergibst
+    const conversation = await prisma.conversation.findUnique({
+      where: { id: conversationId },
+      include: {
+        participants: true,
+        messages: { orderBy: { timestamp: 'asc' } },
+      },
+    });
 
-if (!conversationId) {
-  return res.status(400).json({ error: 'Conversation ID fehlt oder ist ungültig.' });
-}
+    if (!conversation) {
+      return res.status(404).json({ error: 'Konversation nicht gefunden' });
+    }
 
-const conversation = await prisma.conversation.findUnique({
-  where: { id: conversationId },
-  include: {
-    participants: true,
-    messages: {
-      orderBy: { timestamp: 'asc' },
-    },
-  },
-});
-
-
-    if (!conversation) return res.status(404).json({ error: 'Konversation nicht gefunden' });
-
-    res.json({
+    const enriched = {
       ...conversation,
       participantIds: conversation.participants.map(p => p.id),
-      lastMessage: conversation.messages.length > 0 ? conversation.messages[conversation.messages.length - 1] : null
-    });
+      lastMessage: conversation.messages.at(-1) || null,
+    };
+
+    cache.set(cacheKey, enriched); // ✅ Im Cache speichern
+    res.json(enriched);
   } catch (error) {
     console.error('❌ Fehler beim Laden der Konversation:', error);
     res.status(500).json({ error: 'Fehler beim Abrufen der Konversation' });
   }
 });
+
 
 
 // POST /api/messages/send – Neue Nachricht speichern
@@ -151,6 +163,9 @@ router.post('/send', async (req, res) => {
       where: { id: conversationId },
       data: { updatedAt: new Date() }
     });
+    cache.del(`conversation_${conversationId}`);
+    cache.del(`conversations_${senderId}`); // optional: für Sender-View
+
 
     res.status(201).json(newMessage);
   } catch (error) {
@@ -159,57 +174,6 @@ router.post('/send', async (req, res) => {
   }
 });
 
-router.post('/start', async (req, res) => {
-    let { senderId, receiverId } = req.body;
-  
-    // Umwandeln in Integer, falls String
-    senderId = parseInt(senderId);
-    receiverId = parseInt(receiverId);
-  
-    if (!senderId || !receiverId || isNaN(senderId) || isNaN(receiverId)) {
-      return res.status(400).json({ error: 'senderId oder receiverId fehlt oder ist ungültig' });
-    }
-  
-    try {
-      let conversation = await prisma.conversation.findFirst({
-        where: {
-          AND: [
-            { participants: { some: { id: senderId } } },
-            { participants: { some: { id: receiverId } } }
-          ]
-        },
-        include: {
-          participants: true,
-          messages: {
-            orderBy: { timestamp: 'asc' }
-          }
-        }
-      });
-  
-      if (!conversation) {
-        conversation = await prisma.conversation.create({
-          data: {
-            participants: {
-              connect: [{ id: senderId }, { id: receiverId }]
-            }
-          },
-          include: {
-            participants: true,
-            messages: true
-          }
-        });
-      }
-  
-      res.status(200).json({
-        ...conversation,
-        participantIds: conversation.participants.map(p => p.id),
-        lastMessage: conversation.messages.length > 0 ? conversation.messages[conversation.messages.length - 1] : null
-      });
-    } catch (error) {
-      console.error('❌ Fehler beim Starten der Konversation:', error);
-      res.status(500).json({ error: 'Konversation konnte nicht gestartet werden' });
-    }
-  });
   
 
   // DELETE /api/messages/:id?userId=123
